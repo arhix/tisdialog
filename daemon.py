@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-#http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+# http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
-import sys, os, time, atexit
+
+import os
+import sys
+import time
+import atexit
 from signal import SIGTERM
+
 
 class Daemon:
     """
@@ -10,6 +15,7 @@ class Daemon:
 
     Usage: subclass the Daemon class and override the run() method
     """
+
     def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
         self.stdin = stdin
         self.stdout = stdout
@@ -52,11 +58,14 @@ class Daemon:
         si = file(self.stdin, 'r')
         so = file(self.stdout, 'a+')
         se = file(self.stderr, 'a+', 0)
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        file(self.pidfile,'w+').write("%s\n" % pid)
+        file(self.pidfile, 'w+').write("%s\n" % pid)
 
     def delpid(self):
         os.remove(self.pidfile)
@@ -67,7 +76,7 @@ class Daemon:
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pf = file(self.pidfile,'r')
+            pf = file(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -88,7 +97,7 @@ class Daemon:
         """
         # Get the pid from the pidfile
         try:
-            pf = file(self.pidfile,'r')
+            pf = file(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -97,7 +106,7 @@ class Daemon:
         if not pid:
             message = "pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
-            return # not an error in a restart
+            return  # not an error in a restart
 
         # Try killing the daemon process
         try:
@@ -105,15 +114,15 @@ class Daemon:
                 os.kill(pid, SIGTERM)
                 time.sleep(0.1)
         except OSError, err:
-            #FIX for Ru_ru locale
+            # FIX for Ru_ru locale
             # Anton Fischer <a.fschr@gmail.com>
-            #err = str(err)
-            #if err.find("No such process") > 0:
-                if os.path.exists(self.pidfile):
-                    os.remove(self.pidfile)
-            #else:
-            #    print str(err)
-            #    sys.exit(1)
+            # err = str(err)
+            # if err.find("No such process") > 0:
+            if os.path.exists(self.pidfile):
+                os.remove(self.pidfile)
+                # else:
+                #    print str(err)
+                #    sys.exit(1)
 
     def restart(self):
         """

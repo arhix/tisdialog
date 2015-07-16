@@ -1,16 +1,20 @@
 #!/usr/bin/env python
- 
-import sys, time
+
+import sys
+import time
+
 from daemon import Daemon
 from TisChecker import TisChecker
- 
+
+
 class TisCheckerDaemon(Daemon):
     def run(self):
         c = TisChecker()
         while True:
             c.check()
-            time.sleep(c.getDaemonTimeout())
- 
+            time.sleep(c.get_daemon_timeout())
+
+
 if __name__ == "__main__":
     daemon = TisCheckerDaemon('/tmp/daemon-example.pid')
     if len(sys.argv) == 2:
